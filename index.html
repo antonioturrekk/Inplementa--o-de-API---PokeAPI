@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokédex — consumindo a PokéAPI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --shell: #B7202A;
+    --shell-dark: #8C1620;
+    --frame: #232326;
+    --screen-bg: #DCE8D2;
+    --screen-edge: #9FB593;
+    --ink: #1B1B1B;
+    --amber: #E8A93B;
+    --lens-blue: #7EC8E3;
+    --danger: #8C1620;
+    --font-display: 'Press Start 2P', monospace;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 0%, #2e2e33, #16161a 70%);
+    font-family: var(--font-mono);
+    color: var(--ink);
+    padding: 32px 16px;
+  }
+
+  .device{
+    width: 100%;
+    max-width: 420px;
+    background: var(--shell);
+    border-radius: 18px 18px 28px 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5), inset 0 -6px 0 rgba(0,0,0,.15);
+    padding: 18px;
+    position: relative;
+  }
+
+  .device::before{
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 10px;
+    background: var(--shell-dark);
+    border-radius: 18px 18px 0 0;
+  }
+
+  .top-row{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px 16px;
+  }
+
+  .lens{
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--lens-blue) 45%, #2a6f8f 100%);
+    border: 3px solid #1c4a5c;
+    flex-shrink: 0;
+  }
+
+  .lens-small{
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+  .lens-small.red{ background:#e04b4b; }
+  .lens-small.amber{ background: var(--amber); }
+  .lens-small.green{ background:#5cbf6a; }
+  .small-lenses{ display:flex; gap:6px; }
+
+  h1{
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: #fff;
+    letter-spacing: 1px;
+    margin: 0;
+    text-shadow: 2px 2px 0 rgba(0,0,0,.25);
+  }
+
+  .screen{
+    background: var(--screen-bg);
+    border: 6px solid var(--screen-edge);
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 300px;
+  }
+
+  .search-row{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  input[type="text"]{
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 10px 12px;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--ink);
+  }
+
+  input[type="text"]:focus{
+    outline: 3px solid var(--lens-blue);
+    outline-offset: 1px;
+  }
+
+  button{
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 16px;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    background: var(--amber);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  button:hover{ background: #d69828; }
+  button:active{ transform: translateY(1px); }
+  button:disabled{ opacity: .6; cursor: wait; }
+
+  .hint{
+    font-size: 11px;
+    color: #4a5940;
+    margin: -8px 0 14px;
+  }
+
+  .state-msg{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 14px;
+    border-radius: 6px;
+    border: 2px dashed #7a8a6f;
+    color: #3a4534;
+    text-align: center;
+  }
+
+  .state-msg.error{
+    border-color: var(--danger);
+    color: var(--danger);
+    background: rgba(140,22,32,.08);
+  }
+
+  .result{
+    display: none;
+  }
+
+  .result.visible{ display: block; }
+
+  .result-header{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 2px solid var(--screen-edge);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+
+  .sprite-box{
+    width: 96px;
+    height: 96px;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sprite-box img{
+    width: 84px;
+    height: 84px;
+    image-rendering: pixelated;
+  }
+
+  .name-block .pokedex-num{
+    font-size: 11px;
+    color: #5a6b4f;
+  }
+
+  .name-block h2{
+    font-family: var(--font-display);
+    font-size: 15px;
+    text-transform: capitalize;
+    margin: 4px 0 8px;
+    line-height: 1.4;
+  }
+
+  .types{
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .type-badge{
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background: var(--frame);
+    color: #fff;
+  }
+
+  .info-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .info-card{
+    background: #fff;
+    border: 1px solid var(--screen-edge);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  .info-card .label{
+    font-size: 10px;
+    color: #5a6b4f;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  .info-card .value{
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .stats-title{
+    font-size: 11px;
+    color: #5a6b4f;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+  }
+
+  .stat-row{
+    display: grid;
+    grid-template-columns: 70px 1fr 34px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .stat-bar-bg{
+    background: #c6d4bc;
+    border-radius: 3px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .stat-bar-fill{
+    height: 100%;
+    background: var(--shell);
+  }
+
+  footer{
+    text-align: center;
+    font-size: 10px;
+    color: #9aa08e;
+    margin-top: 14px;
+    letter-spacing: .5px;
+  }
+
+  .bottom-row{
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 16px;
+  }
+
+  .d-pad-dot{
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.35);
+  }
+</style>
+</head>
+<body>
+
+<main class="device">
+  <div class="top-row">
+    <div class="lens"></div>
+    <h1>POKÉDEX &mdash; PokéAPI</h1>
+    <div class="small-lenses" style="margin-left:auto;">
+      <span class="lens-small red"></span>
+      <span class="lens-small amber"></span>
+      <span class="lens-small green"></span>
+    </div>
+  </div>
+
+  <div class="screen">
+    <form class="search-row" id="search-form">
+      <input type="text" id="search-input" placeholder="nome ou número (ex: pikachu, 25)" autocomplete="off">
+      <button type="submit" id="search-btn">Buscar</button>
+    </form>
+    <p class="hint">Digite o nome (em inglês) ou o número da Pokédex e pressione Buscar.</p>
+
+    <div id="message-area">
+      <div class="state-msg">Faça uma busca para ver os dados vindos da PokéAPI.</div>
+    </div>
+
+    <div class="result" id="result">
+      <div class="result-header">
+        <div class="sprite-box">
+          <img id="sprite" src="" alt="">
+        </div>
+        <div class="name-block">
+          <div class="pokedex-num" id="poke-num"></div>
+          <h2 id="poke-name"></h2>
+          <div class="types" id="poke-types"></div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="label">Altura</div>
+          <div class="value" id="poke-height"></div>
+        </div>
+        <div class="info-card">
+          <div class="label">Peso</div>
+          <div class="value" id="poke-weight"></div>
+        </div>
+      </div>
+
+      <div class="stats-title">Atributos base</div>
+      <div id="poke-stats"></div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <span class="d-pad-dot"></span>
+    <span class="d-pad-dot"></span>
+    <span class="d-pad-dot"></span>
+  </div>
+
+  <footer>Dados fornecidos por pokeapi.co</footer>
+</main>
+
+<script>
+  const API_BASE = "https://pokeapi.co/api/v2/pokemon/";
+
+  const form = document.getElementById("search-form");
+  const input = document.getElementById("search-input");
+  const btn = document.getElementById("search-btn");
+  const messageArea = document.getElementById("message-area");
+  const result = document.getElementById("result");
+
+  const statLabels = {
+    hp: "HP",
+    attack: "Ataque",
+    defense: "Defesa",
+    "special-attack": "Atq. Esp.",
+    "special-defense": "Def. Esp.",
+    speed: "Velocidade"
+  };
+
+  function showMessage(text, isError){
+    result.classList.remove("visible");
+    const cls = isError ? "state-msg error" : "state-msg";
+    messageArea.innerHTML = `<div class="${cls}">${text}</div>`;
+  }
+
+  function clearMessage(){
+    messageArea.innerHTML = "";
+  }
+
+  function renderPokemon(data){
+    clearMessage();
+
+    document.getElementById("sprite").src = data.sprites.front_default || "";
+    document.getElementById("sprite").alt = data.name;
+    document.getElementById("poke-num").textContent = "Nº " + String(data.id).padStart(3, "0");
+    document.getElementById("poke-name").textContent = data.name;
+
+    const typesEl = document.getElementById("poke-types");
+    typesEl.innerHTML = "";
+    data.types.forEach(t => {
+      const span = document.createElement("span");
+      span.className = "type-badge";
+      span.textContent = t.type.name;
+      typesEl.appendChild(span);
+    });
+
+    document.getElementById("poke-height").textContent = (data.height / 10).toFixed(1) + " m";
+    document.getElementById("poke-weight").textContent = (data.weight / 10).toFixed(1) + " kg";
+
+    const statsEl = document.getElementById("poke-stats");
+    statsEl.innerHTML = "";
+    data.stats.forEach(s => {
+      const statName = statLabels[s.stat.name] || s.stat.name;
+      const value = s.base_stat;
+      const pct = Math.min(100, (value / 180) * 100);
+
+      const row = document.createElement("div");
+      row.className = "stat-row";
+      row.innerHTML = `
+        <span>${statName}</span>
+        <span class="stat-bar-bg"><span class="stat-bar-fill" style="width:${pct}%"></span></span>
+        <span>${value}</span>
+      `;
+      statsEl.appendChild(row);
+    });
+
+    result.classList.add("visible");
+  }
+
+  async function searchPokemon(query){
+    const clean = query.trim().toLowerCase();
+
+    if (!clean){
+      showMessage("Digite um nome ou número antes de buscar.", true);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Buscando...";
+    showMessage("Consultando a PokéAPI...", false);
+
+    try {
+      const response = await fetch(API_BASE + encodeURIComponent(clean));
+
+      if (response.status === 404){
+        showMessage(`Nenhum Pokémon encontrado para "${clean}". Confira a grafia (em inglês) ou o número.`, true);
+        return;
+      }
+
+      if (!response.ok){
+        showMessage(`A PokéAPI respondeu com erro (status ${response.status}). Tente novamente em instantes.`, true);
+        return;
+      }
+
+      const data = await response.json();
+      renderPokemon(data);
+
+    } catch (err) {
+      showMessage("Não foi possível conectar à PokéAPI. Verifique sua internet e tente de novo.", true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Buscar";
+    }
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    searchPokemon(input.value);
+  });
+</script>
+
+</body>
+</html>
