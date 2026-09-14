@@ -12,9 +12,8 @@ Um objeto JSON com os dados do Pokémon consultado: `id`, `name`, `height` (altu
 
 ## 3. O endereço que foi chamado
 
-Consulta de exemplo (funciona direto no navegador):
-`https://pokeapi.co/api/v2/pokemon/pikachu`
-
+Para ser realizada a consulta não é necessario editar a URl e sim inserir o nome em inglês do pokemon ou o numero dele na pokedex.
+ 
 ## 4. Como rodar
 
 Abra o arquivo `index.html` diretamente no navegador (duplo clique ou clique com o botão direito → Abrir com). Não é necessário servidor, banco de dados, framework ou login. É necessário apenas estar conectado à internet, pois a página faz a requisição à PokéAPI a cada busca.
@@ -23,9 +22,8 @@ Digite o nome do Pokémon em inglês (ex.: `charizard`) ou o número dele na Pok
 
 ## 5. Print da tela funcionando
 
-![Print da Pokédex funcionando, mostrando o resultado de uma busca por um Pokémon](print-funcionando.png)
+<img width="1919" height="1029" alt="Captura de tela 2026-09-14 100214" src="https://github.com/user-attachments/assets/e52d8bd6-7a6b-416b-9664-d0edb1c7530a" />
 
-*(Substitua a imagem acima pelo print real da sua tela após testar a busca, antes de enviar ao repositório.)*
 
 ## 6. Uma dificuldade que houve
 
